@@ -89,18 +89,29 @@ function GameController() {
         return false;
     }
 
+    const checkDraw = () => {
+        const b = board.getBoardState();
+
+        return b.every(row => row.every(cell => cell !== ' '));
+    }
+
     const playRound = (row, column) => {
         const validMove = board.placeMarker(row, column, getActivePlayer().marker);
 
         if (!validMove) {
-            return;
+            return false;
         }
 
         if (checkWinner()) {
-            return;
+            return true;
+        }
+
+        if (checkDraw()) {
+            return true;
         }
 
         switchPlayer();
+        return true;
     };
 
     const resetGame = () => {
@@ -108,7 +119,7 @@ function GameController() {
         activePlayer = players[0];
     }
 
-    return { playRound, getActivePlayer, getBoard: board.getBoard, checkWinner, resetGame };
+    return { playRound, getActivePlayer, getBoard: board.getBoard, checkWinner, checkDraw, resetGame };
 }
 
 
@@ -117,6 +128,22 @@ function displayController() {
     const boardElement = document.querySelector('.board');
     const turnElement = document.querySelector('.turn');
     const resetElement = document.querySelector('.reset');
+
+    const disableBoard = () => {
+        boardElement.querySelectorAll('button').forEach(button => button.disabled = true);
+    }
+
+    const showResetButton = () => {
+        const resetButton = document.createElement('button');
+        resetButton.textContent = 'Reset Game';
+        resetButton.classList.add('reset-button');
+        resetElement.appendChild(resetButton);
+
+        resetButton.addEventListener('click', () => {
+            game.resetGame();
+            updateDisplay();
+        });
+    }
 
     const updateDisplay = () => {
 
@@ -142,29 +169,32 @@ function displayController() {
 
         if (game.checkWinner()) {
             turnElement.textContent = `${activePlayer.name} wins!`;
-            boardElement.querySelectorAll('button').forEach(button => button.disabled = true);
-
-            const resetButton = document.createElement('button');
-            resetButton.textContent = 'Reset Game';
-            resetButton.classList.add('reset-button');
-            resetElement.appendChild(resetButton);
-
-            resetButton.addEventListener('click', () => {
-                game.resetGame();
-                updateDisplay();
-            });
+            disableBoard();
+            showResetButton();
+        } else if (game.checkDraw()) {
+            turnElement.textContent = `It's a draw!`;
+            disableBoard();
+            showResetButton();
         }
+
+
     };
 
     const handleClick = (e) => {
         if (!e.target.classList.contains('cell')) return;
 
-        if (game.checkWinner()) return;
+        if (game.checkWinner() || game.checkDraw()) return;
 
         const selectedRow = e.target.dataset.row;
         const selectedColumn = e.target.dataset.column;
 
-        game.playRound(selectedRow, selectedColumn);
+        const isValied = game.playRound(selectedRow, selectedColumn);
+
+        if (!isValied) {
+            alert('Cell already occupied! Choose another one.');
+            return;
+        }
+
         updateDisplay();
 
     };
