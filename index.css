@@ -16,6 +16,16 @@ body {
     gap: 2rem;
 }
 
+h1 {
+    font-size: 4rem;
+    font-weight: bold;
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
 .container {
     height: 500px;
     width: 500px;
@@ -38,7 +48,8 @@ body {
     height: 100%;
     width: 100%;
     border: 1px solid black;
-    font-size: 3rem;
+    font-size: 5rem;
+    font-weight: bold;
     background-color: white;
     transition: background-color 0.3s;
 }
