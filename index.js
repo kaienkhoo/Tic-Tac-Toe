@@ -25,7 +25,6 @@ function Gameboard() {
 
     const placeMarker = (row, column, player) => {
         if (board[row][column].getValue() !== ' ') {
-            console.log('Cell already occupied');
             return false;
         }
 
@@ -37,8 +36,11 @@ function Gameboard() {
         return board.map(row => row.map(cell => cell.getValue()));
     }
 
+    const resetBoard = () => {
+        board.forEach(row => row.forEach(cell => cell.addMarker(' ')));
+    }
 
-    return { getBoard, getBoardState, placeMarker };
+    return { getBoard, getBoardState, placeMarker, resetBoard };
 }
 
 
@@ -87,11 +89,6 @@ function GameController() {
         return false;
     }
 
-    const printNewRound = () => {
-        console.log(board.getBoardState());
-        console.log(`${getActivePlayer().name}'s turn (${getActivePlayer().marker})`);
-    };
-
     const playRound = (row, column) => {
         const validMove = board.placeMarker(row, column, getActivePlayer().marker);
 
@@ -100,29 +97,85 @@ function GameController() {
         }
 
         if (checkWinner()) {
-            console.log(board.getBoardState());
-            console.log(`${getActivePlayer().name} wins!`);
-            return
+            return;
         }
 
         switchPlayer();
-        printNewRound();
     };
 
-    printNewRound()
+    const resetGame = () => {
+        board.resetBoard();
+        activePlayer = players[0];
+    }
 
-    return { playRound, getActivePlayer }
+    return { playRound, getActivePlayer, getBoard: board.getBoard, checkWinner, resetGame };
 }
 
-const game = GameController();
 
-game.playRound(2, 1)
-game.playRound(0, 0)
-game.playRound(1, 1)
-game.playRound(0, 1)
-game.playRound(1, 2)
-game.playRound(0, 2)
+function displayController() {
+    const game = GameController();
+    const boardElement = document.querySelector('.board');
+    const turnElement = document.querySelector('.turn');
+    const resetElement = document.querySelector('.reset');
+
+    const updateDisplay = () => {
+
+        boardElement.innerHTML = '';
+        resetElement.innerHTML = '';
+
+        const board = game.getBoard();
+        const activePlayer = game.getActivePlayer();
+
+        turnElement.textContent = `${activePlayer.name}'s turn (${activePlayer.marker})`;
+
+        board.forEach((row, rowIndex) => {
+            row.forEach((cell, columnIndex) => {
+                const cellButton = document.createElement('button');
+                cellButton.classList.add('cell')
+
+                cellButton.dataset.row = rowIndex;
+                cellButton.dataset.column = columnIndex;
+                cellButton.textContent = cell.getValue();
+                boardElement.append(cellButton);
+            })
+        });
+
+        if (game.checkWinner()) {
+            turnElement.textContent = `${activePlayer.name} wins!`;
+            boardElement.querySelectorAll('button').forEach(button => button.disabled = true);
+
+            const resetButton = document.createElement('button');
+            resetButton.textContent = 'Reset Game';
+            resetButton.classList.add('reset-button');
+            resetElement.appendChild(resetButton);
+
+            resetButton.addEventListener('click', () => {
+                game.resetGame();
+                updateDisplay();
+            });
+        }
+    };
+
+    const handleClick = (e) => {
+        if (!e.target.classList.contains('cell')) return;
+
+        if (game.checkWinner()) return;
+
+        const selectedRow = e.target.dataset.row;
+        const selectedColumn = e.target.dataset.column;
+
+        game.playRound(selectedRow, selectedColumn);
+        updateDisplay();
+
+    };
+
+
+    boardElement.addEventListener('click', handleClick);
 
 
 
+    updateDisplay();
 
+}
+
+displayController()
